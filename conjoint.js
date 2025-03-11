@@ -343,7 +343,7 @@ function collectAndSubmitResponses() {
   // Create a hidden form to submit to Google Apps Script
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = 'https://script.google.com/macros/s/AKfycbzHO8tZgPZBwMGNyM68pFouXaB6Vf3H5H4m-sAhlLkLH5OwXmw9lq3W-EP6N_7sxRFC/exec';
+  form.action = 'https://script.google.com/a/macros/aihe.me/s/AKfycbyD68oMabOQYPL8RWup82dZhjje8F4QTJrM3S3P5ddBf1oYHcG6tYxlNM64H2KzkCQH/exec';
   
   // Create a hidden iframe to prevent page navigation
   const iframe = document.createElement('iframe');
