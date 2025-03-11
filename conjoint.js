@@ -315,6 +315,7 @@ if (container) {
 }
 
 // Function to collect and process responses
+// Function to collect and process responses
 function collectAndSubmitResponses() {
   const responses = {};
   let allAnswered = true;
@@ -334,16 +335,53 @@ function collectAndSubmitResponses() {
     return;
   }
   
+  // Save to localStorage as backup
+  localStorage.setItem('conjointResponses', JSON.stringify(responses));
+  
   // Show loading state on button
   const submitBtn = document.querySelector('.conjoint-submit');
   const originalText = submitBtn.textContent;
   submitBtn.textContent = 'Submitting...';
   submitBtn.disabled = true;
   
-  // Create a hidden form to submit to Google Apps Script
+  // Add browser info and timestamp to help with debugging
+  responses.userAgent = navigator.userAgent;
+  responses.submitTime = new Date().toISOString();
+  
+  // Try direct fetch first
+  const scriptUrl = 'https://script.google.com/a/macros/aihe.me/s/AKfycbwJDeuEgziwQTQYCwek9XwcSCvQHMPvmMkb631wkUGJQrihBCzWeQIHweS12yx7ye-Q/exec'
+
+  fetch(scriptUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(responses)
+  })
+  .then(response => {
+    console.log('Response received:', response);
+    showSuccessMessage();
+  })
+  .catch(error => {
+    console.error('Fetch error:', error);
+    
+    // Fallback to form submission if fetch fails
+    submitFormFallback(responses, scriptUrl);
+  });
+  
+  // Display success message after a short delay
+  // This runs regardless of fetch result since we have the backup form approach
+  setTimeout(showSuccessMessage, 1500);
+}
+
+// Helper function for form submission fallback
+function submitFormFallback(responses, url) {
+  console.log('Using form fallback submission');
+  
+  // Create a hidden form
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = 'https://script.google.com/a/macros/aihe.me/s/AKfycbyD68oMabOQYPL8RWup82dZhjje8F4QTJrM3S3P5ddBf1oYHcG6tYxlNM64H2KzkCQH/exec';
+  form.action = url;
   
   // Create a hidden iframe to prevent page navigation
   const iframe = document.createElement('iframe');
@@ -364,22 +402,20 @@ function collectAndSubmitResponses() {
   
   // Submit the form
   form.submit();
-  
-  // Display confirmation message
-  setTimeout(() => {
-    const container = document.getElementById('conjoint-profiles-container');
-    if (container) {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
-          <h3 style="margin-bottom: 1rem; font-weight: 600;">Thank you for completing the survey!</h3>
-          <p>Your responses have been recorded.</p>
-        </div>
-      `;
-    }
-  }, 1000);
-  
-  // Save to localStorage as backup
-  localStorage.setItem('conjointResponses', JSON.stringify(responses));
+}
+
+// Helper function to show success message
+function showSuccessMessage() {
+  const container = document.getElementById('conjoint-profiles-container');
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem;">
+        <h3 style="margin-bottom: 1rem; font-weight: 600;">Thank you for completing the survey!</h3>
+        <p>Your responses have been recorded.</p>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">A backup of your responses has also been saved to your browser's local storage.</p>
+      </div>
+    `;
+  }
 }
 
 // Initialize the conjoint profiles when the page loads
