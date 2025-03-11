@@ -316,24 +316,70 @@ if (container) {
 
 // Function to collect and process responses
 function collectAndSubmitResponses() {
-const responses = {};
-
-// Collect all responses
-for (let p = 1; p <= K; p++) {
-  const selectedOption = document.querySelector(`input[name="task-${p}-choice"]:checked`);
-  if (selectedOption) {
-    responses[`task-${p}`] = selectedOption.value;
+  const responses = {};
+  let allAnswered = true;
+  
+  // Collect all responses
+  for (let p = 1; p <= K; p++) {
+    const selectedOption = document.querySelector(`input[name="task-${p}-choice"]:checked`);
+    if (selectedOption) {
+      responses[`task-${p}`] = selectedOption.value;
+    } else {
+      allAnswered = false;
+    }
   }
-}
-
-// Here you would add code to save the responses
-console.log('Responses collected:', responses);
-
-// Example: Save to localStorage
-localStorage.setItem('conjointResponses', JSON.stringify(responses));
-
-// Provide feedback to the user
-alert('Thank you for completing the survey! Your responses have been recorded.');
+  
+  if (!allAnswered) {
+    alert('Please make a selection for all tasks before submitting.');
+    return;
+  }
+  
+  // Show loading state on button
+  const submitBtn = document.querySelector('.conjoint-submit');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Submitting...';
+  submitBtn.disabled = true;
+  
+  // Create a hidden form to submit to Google Apps Script
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://script.google.com/macros/s/AKfycbzHO8tZgPZBwMGNyM68pFouXaB6Vf3H5H4m-sAhlLkLH5OwXmw9lq3W-EP6N_7sxRFC/exec';
+  
+  // Create a hidden iframe to prevent page navigation
+  const iframe = document.createElement('iframe');
+  iframe.name = 'hidden_iframe';
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  form.target = 'hidden_iframe';
+  
+  // Add the data as a single JSON payload
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(responses);
+  form.appendChild(input);
+  
+  // Add form to body
+  document.body.appendChild(form);
+  
+  // Submit the form
+  form.submit();
+  
+  // Display confirmation message
+  setTimeout(() => {
+    const container = document.getElementById('conjoint-profiles-container');
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+          <h3 style="margin-bottom: 1rem; font-weight: 600;">Thank you for completing the survey!</h3>
+          <p>Your responses have been recorded.</p>
+        </div>
+      `;
+    }
+  }, 1000);
+  
+  // Save to localStorage as backup
+  localStorage.setItem('conjointResponses', JSON.stringify(responses));
 }
 
 // Initialize the conjoint profiles when the page loads
