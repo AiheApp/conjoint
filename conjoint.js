@@ -315,7 +315,6 @@ if (container) {
 }
 
 // Function to collect and process responses
-// Function to collect and process responses
 function collectAndSubmitResponses() {
   const responses = {};
   let allAnswered = true;
@@ -340,38 +339,52 @@ function collectAndSubmitResponses() {
   
   // Show loading state on button
   const submitBtn = document.querySelector('.conjoint-submit');
-  const originalText = submitBtn.textContent;
   submitBtn.textContent = 'Submitting...';
   submitBtn.disabled = true;
   
-  // Add browser info and timestamp to help with debugging
-  responses.userAgent = navigator.userAgent;
+  // Add timestamp to responses
   responses.submitTime = new Date().toISOString();
   
-  // Try direct fetch first
-  const scriptUrl = 'https://script.google.com/a/macros/aihe.me/s/AKfycbwJDeuEgziwQTQYCwek9XwcSCvQHMPvmMkb631wkUGJQrihBCzWeQIHweS12yx7ye-Q/exec'
-
-  fetch(scriptUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(responses)
-  })
-  .then(response => {
-    console.log('Response received:', response);
-    showSuccessMessage();
-  })
-  .catch(error => {
-    console.error('Fetch error:', error);
-    
-    // Fallback to form submission if fetch fails
-    submitFormFallback(responses, scriptUrl);
-  });
+  // Use form submission method (bypasses CORS)
+  const scriptUrl = 'https://script.google.com/a/macros/aihe.me/s/AKfycbyP_eCxmC_zg0gcK3m1ndM2oOjQrraTo2JlyH_QNlzIrTBUkdcldCPfJPjyHYjQzTU/exec'
+  // Create a hidden form
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = scriptUrl;
+  
+  // Create a hidden iframe to prevent page navigation
+  const iframe = document.createElement('iframe');
+  iframe.name = 'hidden_iframe';
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  form.target = 'hidden_iframe';
+  
+  // Add the data as a single JSON payload
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(responses);
+  form.appendChild(input);
+  
+  // Add form to body
+  document.body.appendChild(form);
+  
+  // Submit the form
+  form.submit();
   
   // Display success message after a short delay
-  // This runs regardless of fetch result since we have the backup form approach
-  setTimeout(showSuccessMessage, 1500);
+  setTimeout(() => {
+    const container = document.getElementById('conjoint-profiles-container');
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+          <h3 style="margin-bottom: 1rem; font-weight: 600;">Thank you for completing the survey!</h3>
+          <p>Your responses have been recorded.</p>
+          <p style="font-size: 0.9rem; margin-top: 1rem;">A backup of your responses has also been saved to your browser's local storage.</p>
+        </div>
+      `;
+    }
+  }, 1500);
 }
 
 // Helper function for form submission fallback
